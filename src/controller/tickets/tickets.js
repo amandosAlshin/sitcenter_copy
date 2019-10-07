@@ -52,7 +52,6 @@ wss.on('connection', function(ws){
 wss.on('close', function() {
   console.log('connection closed');
 });
-console.log(smtpEmail.hostSend,smtpEmail.authUserSend,smtpEmail.authPassSend);
 var sendEmail = mailer.config({
     port: smtpEmail.portSend,
     host: smtpEmail.hostSend,
@@ -175,22 +174,27 @@ const checkTicketSendStatus = (eventid)=>{
 const ticketSendStatus = (eventid)=>{
     return new Promise(function(resolve,reject){
         db.query('UPDATE `facts` SET '+
-        'send_n = 1 WHERE eventid='+eventid, function (err, result) {
+            'send_n = 1 WHERE eventid="'+eventid+'"', function (err, result) {
                 if (err){
-                    console.log('Error when updating facts state_n'+value.eventid);
-                }else{
-
+                    console.log('Error when updating facts state_n '+err);
                 }
-            });
+        });
     });
     return true;
 }
 const SendNotificationUserEmail=(server,email,ticket)=>{
+    let subject = "";
+    if(ticket.state === "INSERVICE"){
+        subject = "Билет долго обслуживаеться";
+    }else{
+        subject = "Билет долго ожидает";
+    }
+    console.log(ticket);
     var message = {
         from: smtpEmail.fromSendemail,
         to: email,
-        subject: 'Билет долго обслуживаеться',
-        text: 'Билет долго обслуживаеться  отделение ' + server + 'Номер билета ' + ticket.ticketno + 'Услуга ' + ticket.servicename + 'Сотрудник '  + ticket.operator, // REQUIRED.
+        subject: subject,
+        text: subject + ' \nОтделение: ' + server + '\nНомер билета: ' + ticket.ticketno + '\nУслуга: ' + ticket.servicename + '\nСотрудник: '  + ticket.operator, // REQUIRED.
     };
     sendEmail(message)
     .then(function(info){return true;})   // if successful
@@ -208,7 +212,6 @@ const ticketUserCheck = (users,ticket,server,service)=>{
                        for(var s=0;s<=userList.length-1; s++){
                             SendNotificationUserEmail(server.F_NAME,userList[s].email,ticket);
                        }
-
                        ticketSendStatus(ticket.eventid);
                        return true;
                    }else{
@@ -220,32 +223,27 @@ const ticketUserCheck = (users,ticket,server,service)=>{
                 return true;
             }
         });
-
       }
     }else if (ticket.state === 'NEW') {
       let age = timeDifference(ticket.starttime, moment().unix(),true);
       if(age>service.F_QWAIT_TIME){
-          // checkTicketSendStatus(ticket.eventid).then(function(send_n) {
-          //     console.log('Promise send status new',send_n);
-          //     if(send_n){
-          //        checkUserBranch(users,ticket).then(function(userList){
-          //            console.log(userList);
-          //            if(userList.length>0){
-          //                for(var s=0;s<=userList.length-1; s++){
-          //                    console.log(server.F_NAME,userList[s].email,ticket);
-          //                     SendNotificationUserEmail(server.F_NAME,userList[s].email,ticket)
-          //                }
-          //                ticketSendStatus(ticket.eventid);
-          //                return true;
-          //            }else{
-          //                return true;
-          //            }
-          //        });
-          //
-          //     }else{
-          //         return true;
-          //     }
-          // });
+          checkTicketSendStatus(ticket.eventid).then(function(send_n) {
+              if(send_n){
+                 checkUserBranch(users,ticket).then(function(userList){
+                     if(userList.length>0){
+                         for(var s=0;s<=userList.length-1; s++){
+                              SendNotificationUserEmail(server.F_NAME,userList[s].email,ticket);
+                         }
+                         ticketSendStatus(ticket.eventid);
+                         return true;
+                     }else{
+                         return true;
+                     }
+                 }).catch((err) => setImmediate(() => { throw err; }));
+              }else{
+                  return true;
+              }
+          });
       }
     }else{
       return true;

@@ -27,7 +27,7 @@ exports.NomadSoap = (host, port, url)=>{
                 if (error) return callback('',server,false);
                 else if(response.statusCode == 200) {
                     parser.parseString(body, function (err, result) {
-                        if(err) console.log('Error2: ' + err);
+                        if(err) console.log('Error getAllTickets tickets: ' + err);
                         else {
                             var temp = result['soapenv:envelope']['soapenv:body'][0]['cus:nomadallticketlist'][0]['xsd:complextype'][1]['xsd:element'];
                             if (temp) {
@@ -66,8 +66,9 @@ exports.NomadSoap = (host, port, url)=>{
             function (error, response, body) {
                 if (error) console.log('Error related to SOAP BranchIDWindowList: ' + error);
                 else if(response.statusCode == 200) {
+
                     parser.parseString(body, function (err, result) {
-                        if(err) console.log('Error2: ' + err);
+                        if(err) console.log('Error BranchIdWindowList tickets : ' + err);
                         else {
                             var temp = result['soapenv:envelope']['soapenv:body'][0]['cus:nomadwindowlist'][0]['xsd:complextype'][1]['xsd:element'];
                             if (temp) {
@@ -105,7 +106,7 @@ exports.NomadSoap = (host, port, url)=>{
                 if (error) console.log('Error related to SOAP AllOperatorList '+serverUrl+' fff' + error);
                 else if(response.statusCode == 200) {
                     parser.parseString(body, function (err, result) {
-                        if(err) console.log('Error2: ' + err);
+                        if(err) console.log('Error AllOperatorList tickets: ' + err);
                         else {
                           if(result){
                               var temp = result['soapenv:envelope']['soapenv:body'][0]['cus:nomadalloperatorlist'][0]['xsd:complextype'][1]['xsd:element'];
